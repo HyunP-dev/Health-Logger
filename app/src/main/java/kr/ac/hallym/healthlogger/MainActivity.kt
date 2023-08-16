@@ -26,6 +26,7 @@ import kr.ac.hallym.healthlogger.toolkit.IDToolkit
 import java.io.File
 import kotlin.math.abs
 import kotlin.random.Random
+import kotlin.system.exitProcess
 
 
 class MainActivity : FragmentActivity(), AmbientModeSupport.AmbientCallbackProvider {
@@ -85,6 +86,10 @@ class MainActivity : FragmentActivity(), AmbientModeSupport.AmbientCallbackProvi
             }, intentFilter)
     }
 
+    private val isDenied = { p: String ->
+        ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_DENIED
+    }
+
     private fun reqPermissions() {
         val permissions = arrayOf(
             Manifest.permission.ACTIVITY_RECOGNITION,
@@ -93,13 +98,16 @@ class MainActivity : FragmentActivity(), AmbientModeSupport.AmbientCallbackProvi
             Manifest.permission.INTERNET
         )
 
-        val isDenied = { p: String ->
-            ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_DENIED
-        }
-
         if (permissions.any(isDenied))
             requestPermissions(permissions.filter(isDenied).toTypedArray(), 1001)
+    }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissions.any(isDenied))
             reqPermissions()
     }

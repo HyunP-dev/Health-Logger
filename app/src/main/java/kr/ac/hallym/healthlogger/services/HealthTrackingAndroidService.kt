@@ -25,6 +25,7 @@ import com.samsung.android.service.health.tracking.data.DataPoint
 import com.samsung.android.service.health.tracking.data.HealthTrackerType
 import com.samsung.android.service.health.tracking.data.ValueKey
 import kr.ac.hallym.healthlogger.Action
+import kr.ac.hallym.healthlogger.IntentExtra
 import kr.ac.hallym.healthlogger.listeners.HeartrateListener
 import kr.ac.hallym.healthlogger.listeners.ISensorListener
 import kr.ac.hallym.healthlogger.listeners.SPO2Listener
@@ -79,9 +80,24 @@ class HealthTrackingAndroidService : Service() {
                             gyroFile.writeText("time,gx,gy,gz\n")
                             heartrateFile = File(filesDir.path, "${getID()}_heartrate_${time}")
                             heartrateFile.writeText("time,heartrate,status\n")
+
+                            currentAccListener = IMUListener(accFile, Sensor.TYPE_ACCELEROMETER)
+                            currentGyroListener = IMUListener(gyroFile, Sensor.TYPE_GYROSCOPE)
+
+                            sensorManager.registerListener(
+                                currentAccListener,
+                                sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                                SensorManager.SENSOR_DELAY_UI)
+
+                            sensorManager.registerListener(
+                                currentGyroListener,
+                                sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE),
+                                SensorManager.SENSOR_DELAY_UI)
                         }
                         Action.END_LOGGING -> {
                             Log.d("broadcasted", Action.END_LOGGING.name)
+                            sensorManager.unregisterListener(currentAccListener)
+                            sensorManager.unregisterListener(currentGyroListener)
                             isLogging = false
                         }
                         else -> {}
@@ -105,6 +121,11 @@ class HealthTrackingAndroidService : Service() {
         override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
     }
 
+    lateinit var currentAccListener: IMUListener
+    lateinit var currentGyroListener: IMUListener
+
+    lateinit var sensorManager: SensorManager
+
     @SuppressLint("InvalidWakeLockTag")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val powerMgr = getSystemService(POWER_SERVICE) as PowerManager
@@ -112,17 +133,7 @@ class HealthTrackingAndroidService : Service() {
         wakeLock.acquire()
         makeForeground()
 
-        val sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-        sensorManager.registerListener(
-            IMUListener(accFile, Sensor.TYPE_ACCELEROMETER),
-            sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
-            SensorManager.SENSOR_DELAY_UI)
-
-        sensorManager.registerListener(
-            IMUListener(gyroFile, Sensor.TYPE_GYROSCOPE),
-            sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE),
-            SensorManager.SENSOR_DELAY_UI)
-
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
 
         healthTracking = HealthTrackingService(object : ConnectionListener {
             override fun onConnectionSuccess() {
@@ -137,8 +148,11 @@ class HealthTrackingAndroidService : Service() {
                         p0.forEach {
                             it.getValue(ValueKey.HeartRateSet.HEART_RATE)
                             if (HeartrateStatus.from(it) != HeartrateStatus.SUCCESSFUL) return
+                            if (isLogging) {
+                                heartrateFile.writeText("${it.timestamp},${it.getValue(ValueKey.HeartRateSet.HEART_RATE)}")
+                            }
                             Log.d(
-                                javaClass.simpleName,
+                                "HeartrateEventListener",
                                 "${it.timestamp},${it.getValue(ValueKey.HeartRateSet.HEART_RATE)}"
                             )
                         }
@@ -147,7 +161,7 @@ class HealthTrackingAndroidService : Service() {
                         LocalBroadcastManager
                             .getInstance(this@HealthTrackingAndroidService)
                             .sendBroadcastSync(Intent(Action.DATA_RECEIVED.toString())
-                                .putExtra("lastHeartrate", value))
+                                .putExtra(IntentExtra.LAST_HEARTRATE.toString(), value))
                     }
 
                     override fun onFlushCompleted() {
