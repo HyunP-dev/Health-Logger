@@ -15,6 +15,7 @@ import android.provider.Settings
 import android.util.Log
 import android.view.WindowManager
 import android.widget.TextView
+import android.widget.Toast
 import android.widget.ToggleButton
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
@@ -78,6 +79,28 @@ class MainActivity : FragmentActivity(), AmbientModeSupport.AmbientCallbackProvi
                             if (isAmbientMode) return
                             val value = intent.getIntExtra(IntentExtra.LAST_HEARTRATE.toString(), 0)
                             textview.text = "$value bpm"
+                        }
+
+                        Action.SEND_SUCCESSFUL -> {
+                            runOnUiThread {
+                                Toast.makeText(
+                                    applicationContext,
+                                    "Send completed",
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
+                            }
+                        }
+
+                        Action.SEND_FAILED -> {
+                            runOnUiThread {
+                                Toast.makeText(
+                                    applicationContext,
+                                    "Send failed",
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
+                            }
                         }
 
                         else -> {}

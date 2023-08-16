@@ -16,6 +16,7 @@ import android.hardware.SensorManager
 import android.os.IBinder
 import android.os.PowerManager
 import android.util.Log
+import android.widget.Toast
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.samsung.android.service.health.tracking.ConnectionListener
 import com.samsung.android.service.health.tracking.HealthTracker
@@ -34,6 +35,8 @@ import kr.ac.hallym.healthlogger.toolkit.IDToolkit
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import it.sauronsoftware.ftp4j.FTPClient
+import it.sauronsoftware.ftp4j.FTPDataTransferListener
 
 class HealthTrackingAndroidService : Service() {
     lateinit var healthTracking: HealthTrackingService
@@ -98,6 +101,36 @@ class HealthTrackingAndroidService : Service() {
                             Log.d("broadcasted", Action.END_LOGGING.name)
                             sensorManager.unregisterListener(currentAccListener)
                             sensorManager.unregisterListener(currentGyroListener)
+
+                            Thread {
+                                val ftpClient = FTPClient()
+                                ftpClient.connect("senunas.ipdisk.co.kr", 2348)
+                                ftpClient.login("pakhyun", "parkhyun")
+                                ftpClient.type = FTPClient.TYPE_BINARY
+                                ftpClient.changeDirectory("/HDD1/pak_hyun/")
+                                val ftpTListener = object : FTPDataTransferListener {
+                                    override fun started() {}
+
+                                    override fun transferred(length: Int) {}
+
+                                    override fun completed() {
+                                        LocalBroadcastManager
+                                            .getInstance(this@HealthTrackingAndroidService)
+                                            .sendBroadcastSync(Intent(Action.SEND_SUCCESSFUL.toString()))
+                                    }
+
+                                    override fun aborted() {}
+
+                                    override fun failed() {
+                                        LocalBroadcastManager
+                                            .getInstance(this@HealthTrackingAndroidService)
+                                            .sendBroadcastSync(Intent(Action.SEND_FAILED.toString()))
+                                    }
+                                }
+                                ftpClient.upload(heartrateFile, ftpTListener)
+                                ftpClient.upload(accFile, ftpTListener)
+                                ftpClient.upload(gyroFile, ftpTListener)
+                            }.start()
                             isLogging = false
                         }
                         else -> {}

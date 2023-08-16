@@ -12,7 +12,9 @@ enum class Action {
     RES_ALIVE,
     REQ_DATA,
     RES_DATA,
-    Q_IS_LOGGING;
+    Q_IS_LOGGING,
+    SEND_SUCCESSFUL,
+    SEND_FAILED;
 
     fun isFor(cls: Class<Any>) = when (this) {
         START_LOGGING,
@@ -27,7 +29,7 @@ enum class Action {
         RES_ALIVE,
         RES_DATA -> cls == MainActivity::class.java
 
-        else -> false
+        else -> true
     }
 
     override fun toString(): String {
