@@ -147,7 +147,11 @@ class MainActivity : FragmentActivity(), AmbientModeSupport.AmbientCallbackProvi
         getID()
 
         togglebtn = findViewById(R.id.togglebtn)
+        togglebtn.isEnabled = true
+
         textview = findViewById(R.id.textview)
+        val idview = findViewById<TextView>(R.id.idview)
+        idview.text = IDToolkit.getID(filesDir.path)
 
         LocalBroadcastManager
             .getInstance(applicationContext)
