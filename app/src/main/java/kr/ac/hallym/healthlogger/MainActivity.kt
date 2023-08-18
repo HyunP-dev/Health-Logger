@@ -75,6 +75,10 @@ class MainActivity : FragmentActivity(), AmbientModeSupport.AmbientCallbackProvi
                             togglebtn.isChecked = true
                         }
 
+                        Action.IS_NOT_LOGGING -> {
+                            togglebtn.isChecked = false
+                        }
+
                         Action.DATA_RECEIVED -> {
                             if (isAmbientMode) return
                             val value = intent.getIntExtra(IntentExtra.LAST_HEARTRATE.toString(), 0)
@@ -150,6 +154,8 @@ class MainActivity : FragmentActivity(), AmbientModeSupport.AmbientCallbackProvi
         togglebtn.isEnabled = true
 
         textview = findViewById(R.id.textview)
+        textview.text = "- bpm"
+
         val idview = findViewById<TextView>(R.id.idview)
         idview.text = IDToolkit.getID(filesDir.path)
 

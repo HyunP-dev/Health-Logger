@@ -73,6 +73,11 @@ class HealthTrackingAndroidService : Service() {
             .registerReceiver(object: BroadcastReceiver() {
                 override fun onReceive(context: Context, intent: Intent) {
                     when(enumValueOf<Action>(intent.action!!)) {
+                        Action.Q_IS_LOGGING -> {
+                            LocalBroadcastManager
+                                .getInstance(this@HealthTrackingAndroidService)
+                                .sendBroadcastSync(Intent((if (isLogging) Action.IS_LOGGING else Action.IS_NOT_LOGGING).toString()))
+                        }
                         Action.START_LOGGING -> {
                             Log.d("broadcasted", Action.START_LOGGING.name)
                             isLogging = true
@@ -81,8 +86,8 @@ class HealthTrackingAndroidService : Service() {
                             accFile.writeText("time,ax,ay,az\n")
                             gyroFile = File(filesDir.path, "${getID()}_gyro_${time}.csv")
                             gyroFile.writeText("time,gx,gy,gz\n")
-                            heartrateFile = File(filesDir.path, "${getID()}_heartrate_${time}")
-                            heartrateFile.writeText("time,heartrate,status\n")
+                            heartrateFile = File(filesDir.path, "${getID()}_heartrate_${time}.csv")
+                            heartrateFile.writeText("time,status,heartrate\n")
 
                             currentAccListener = IMUListener(accFile, Sensor.TYPE_ACCELEROMETER)
                             currentGyroListener = IMUListener(gyroFile, Sensor.TYPE_GYROSCOPE)
@@ -180,9 +185,19 @@ class HealthTrackingAndroidService : Service() {
                     override fun onDataReceived(p0: MutableList<DataPoint>) {
                         p0.forEach {
                             it.getValue(ValueKey.HeartRateSet.HEART_RATE)
-                            if (HeartrateStatus.from(it) != HeartrateStatus.SUCCESSFUL) return
+                            if (HeartrateStatus.from(it) != HeartrateStatus.SUCCESSFUL) {
+                                if (isLogging) {
+                                    Log.d(
+                                        "LoggedAs",
+                                        "${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},0"
+                                    )
+                                    heartrateFile.appendText("${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},0\n")
+                                }
+                                return
+                            }
                             if (isLogging) {
-                                heartrateFile.writeText("${it.timestamp},${it.getValue(ValueKey.HeartRateSet.HEART_RATE)}")
+                                Log.d("LoggedAs", "${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},${it.getValue(ValueKey.HeartRateSet.HEART_RATE)}")
+                                heartrateFile.appendText("${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},${it.getValue(ValueKey.HeartRateSet.HEART_RATE)}\n")
                             }
                             Log.d(
                                 "HeartrateEventListener",
