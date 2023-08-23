@@ -186,22 +186,26 @@ class HealthTrackingAndroidService : Service() {
                         p0.forEach {
                             it.getValue(ValueKey.HeartRateSet.HEART_RATE)
                             if (HeartrateStatus.from(it) != HeartrateStatus.SUCCESSFUL) {
+                                Log.d(
+                                    "hrTracker.onDataReceived",
+                                    "${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},0"
+                                )
                                 if (isLogging) {
                                     Log.d(
                                         "LoggedAs",
-                                        "${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},0"
+                                        "[${heartrateFile.name}] ${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},0"
                                     )
                                     heartrateFile.appendText("${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},0\n")
                                 }
                                 return
                             }
                             if (isLogging) {
-                                Log.d("LoggedAs", "${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},${it.getValue(ValueKey.HeartRateSet.HEART_RATE)}")
+                                Log.d("LoggedAs", "[${heartrateFile.name}] ${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},${it.getValue(ValueKey.HeartRateSet.HEART_RATE)}")
                                 heartrateFile.appendText("${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},${it.getValue(ValueKey.HeartRateSet.HEART_RATE)}\n")
                             }
                             Log.d(
                                 "HeartrateEventListener",
-                                "${it.timestamp},${it.getValue(ValueKey.HeartRateSet.HEART_RATE)}"
+                                "${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},${it.getValue(ValueKey.HeartRateSet.HEART_RATE)}"
                             )
                         }
                         value = p0.last().getValue(ValueKey.HeartRateSet.HEART_RATE)

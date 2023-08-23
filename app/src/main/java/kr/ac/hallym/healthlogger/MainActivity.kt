@@ -225,4 +225,8 @@ class MainActivity : FragmentActivity(), AmbientModeSupport.AmbientCallbackProvi
 
         }
     }
+
+    override fun onBackPressed() {
+//        super.onBackPressed()
+    }
 }
