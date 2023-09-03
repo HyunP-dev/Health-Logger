@@ -184,29 +184,12 @@ class HealthTrackingAndroidService : Service() {
 
                     override fun onDataReceived(p0: MutableList<DataPoint>) {
                         p0.forEach {
-                            it.getValue(ValueKey.HeartRateSet.HEART_RATE)
-                            if (HeartrateStatus.from(it) != HeartrateStatus.SUCCESSFUL) {
-                                Log.d(
-                                    "hrTracker.onDataReceived",
-                                    "${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},0"
-                                )
-                                if (isLogging) {
-                                    Log.d(
-                                        "LoggedAs",
-                                        "[${heartrateFile.name}] ${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},0"
-                                    )
-                                    heartrateFile.appendText("${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},0\n")
-                                }
-                                return
-                            }
+                            val line = "${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},${if (HeartrateStatus.from(it) != HeartrateStatus.SUCCESSFUL) 0 else it.getValue(ValueKey.HeartRateSet.HEART_RATE)}\n"
                             if (isLogging) {
-                                Log.d("LoggedAs", "[${heartrateFile.name}] ${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},${it.getValue(ValueKey.HeartRateSet.HEART_RATE)}")
-                                heartrateFile.appendText("${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},${it.getValue(ValueKey.HeartRateSet.HEART_RATE)}\n")
+                                Log.d("LoggedAs", "[${heartrateFile.name}] $line")
+                                heartrateFile.appendText(line)
                             }
-                            Log.d(
-                                "HeartrateEventListener",
-                                "${it.timestamp},${it.getValue(ValueKey.HeartRateSet.STATUS)},${it.getValue(ValueKey.HeartRateSet.HEART_RATE)}"
-                            )
+                            Log.d("HeartrateEventListener", line)
                         }
                         value = p0.last().getValue(ValueKey.HeartRateSet.HEART_RATE)
 

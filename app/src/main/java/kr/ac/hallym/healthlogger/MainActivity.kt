@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
+import android.view.KeyEvent
 import android.view.WindowManager
 import android.widget.TextView
 import android.widget.Toast
@@ -24,10 +25,6 @@ import androidx.wear.ambient.AmbientModeSupport
 import kr.ac.hallym.healthlogger.listeners.HeartrateListener
 import kr.ac.hallym.healthlogger.services.HealthTrackingAndroidService
 import kr.ac.hallym.healthlogger.toolkit.IDToolkit
-import java.io.File
-import kotlin.math.abs
-import kotlin.random.Random
-import kotlin.system.exitProcess
 
 
 class MainActivity : FragmentActivity(), AmbientModeSupport.AmbientCallbackProvider {
@@ -56,7 +53,7 @@ class MainActivity : FragmentActivity(), AmbientModeSupport.AmbientCallbackProvi
     fun <T> isServiceRunning(service: Class<T>): Boolean {
         return (getSystemService(ACTIVITY_SERVICE) as ActivityManager)
             .getRunningServices(Integer.MAX_VALUE)
-            .any { it -> it.service.className == service.name }
+            .any { it.service.className == service.name }
     }
 
     private fun initBroadcastReceiver() {
@@ -141,6 +138,8 @@ class MainActivity : FragmentActivity(), AmbientModeSupport.AmbientCallbackProvi
 
     private fun getID(): String = IDToolkit.getID(filesDir.path)
 
+    private var isLongClicked = false
+
     @SuppressLint("InvalidWakeLockTag", "BatteryLife", "SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -167,11 +166,28 @@ class MainActivity : FragmentActivity(), AmbientModeSupport.AmbientCallbackProvi
 //        heartrateViewThreadPtr.start()
 
         togglebtn.setOnCheckedChangeListener { _, isChecked ->
+            if (!isLongClicked) {
+                togglebtn.isChecked = !togglebtn.isChecked
+
+                isLongClicked = false
+                return@setOnCheckedChangeListener
+            }
+
             val broadcastManager = LocalBroadcastManager.getInstance(this)
             val intent = Intent()
 
             intent.action = if (isChecked) Action.START_LOGGING.name else Action.END_LOGGING.name
             broadcastManager.sendBroadcast(intent)
+
+            Log.d("togglebtn", intent.action.toString())
+
+            isLongClicked = false
+        }
+
+        togglebtn.setOnLongClickListener {
+            isLongClicked = true
+            togglebtn.isChecked = !togglebtn.isChecked
+            true
         }
 
         val powerMgr = getSystemService(POWER_SERVICE) as PowerManager
@@ -228,5 +244,10 @@ class MainActivity : FragmentActivity(), AmbientModeSupport.AmbientCallbackProvi
 
     override fun onBackPressed() {
 //        super.onBackPressed()
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        Log.d("onKeyDown", keyCode.toString())
+        return super.onKeyDown(keyCode, event)
     }
 }
